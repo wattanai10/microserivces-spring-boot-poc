@@ -1,0 +1,29 @@
+server:
+  port: 0 #Spring Boot will random pick a free port to run the service (for running multiple instance, you need to click Edit Configurations... and allow multiple instances)
+#  port: 8083
+  servlet:
+    context-path: /pocmicroservice
+spring:
+  cloud:
+    discovery:
+      enabled: true
+  application:
+    name: inventory-service
+  datasource:
+    hikari:
+      connection-timeout: 2000
+    url: jdbc:postgresql://localhost:5432/pocinventorydb?currentSchema=pocinventory
+    username: wattanai
+    password: P@$$w0rd
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+#  eureka.instance.instance-id=${spring.application.name}:${random.int}
+#  eureka.instance.hostname=localhost
+#  eureka.instance.prefer-ip-address=true
+#
+#  eureka.client.register-with-eureka=true
+#  eureka.client.fetch-registry=false
+#  spring.cloud.discovery.enabled=true

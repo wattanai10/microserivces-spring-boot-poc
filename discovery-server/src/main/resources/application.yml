@@ -1,0 +1,10 @@
+eureka:
+  instance:
+    hostname: localhost
+  client: # Don't want to register discovery server as a client
+    register-with-eureka: false
+    fetch-registry: false
+#  server:
+#      renewal-threshold-update-interval-ms: 10000 #update status every 10 sec
+server:
+  port: 8761

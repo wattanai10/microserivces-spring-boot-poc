@@ -1,0 +1,38 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /pocmicroservice
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: discovery-server #route to discovery web (only html)
+          uri: http://localhost:8761
+          predicates:
+            - Path=${server.servlet.context-path}/eureka/web #api-gateway will match the request url and route to the defined uri with a request path
+          filters:
+            - SetPath=/ #redirect to this path instead of a request path
+        - id: discovery-server-static #route to discovery web static resources (for including js, css or other files from web page)
+          uri: http://localhost:8761
+          predicates:
+            - Path=/eureka/** # "<discovery-server-hostname>/eureka/**" will be matched when request to "/eureka/web" and it was redirected to default discovery url
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=${server.servlet.context-path}/api/product/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=${server.servlet.context-path}/api/order/**
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway.route.RouteDefinitionLocator: INFO
+    org.springframework.cloud.gateway: INFO
+#    org.springframework.cloud.gateway: TRACE
