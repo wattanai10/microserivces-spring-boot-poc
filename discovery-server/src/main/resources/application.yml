@@ -1,4 +1,6 @@
 eureka:
+  username: ${EUREKA_USERNAME:eureka} #if there are no ENV Variables, then the default credentials ("eureke") will be picked up
+  password: ${EUREKA_PASSWORD:password} #if there are no ENV Variables, then the default credentials ("password") will be picked up
   instance:
     hostname: localhost
   client: # Don't want to register discovery server as a client
