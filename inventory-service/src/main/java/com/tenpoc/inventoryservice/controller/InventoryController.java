@@ -4,6 +4,7 @@ import com.tenpoc.inventoryservice.dto.InventoryDTO;
 import com.tenpoc.inventoryservice.dto.InventoryResponseDTO;
 import com.tenpoc.inventoryservice.service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,6 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
-
 
     @GetMapping("/status")
     public ResponseEntity<List<InventoryDTO>> isInStock(@RequestParam List<String> skuCode) {

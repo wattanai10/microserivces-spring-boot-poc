@@ -18,3 +18,36 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://eureka:password@localhost:8761/eureka #Because of adding auth in discovery server, we need to add username and password information (http://username:password@...) into url
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*' #include all endpoint for health metrics. Spring Actuator is mainly used to expose operational information about the running application — health, metrics, info, dump, env, etc
+                     #See app health: http://localhost:8082/pocmicroservice/actuator/health
+  endpoint:
+    health:
+      show-details: always
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventory: #CircuitBreaker name
+        register-health-indicator: true #show circuit state
+        event-consumer-buffer-size: 10
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5 #the number of fail requests that CircuitBreaker will try to change from closed state to open state
+        failure-rate-threshold: 50 #When the failure rate (percentage) is equal or greater than the threshold the CircuitBreaker transitions to open
+        wait-duration-in-open-state: 5s #The time that the CircuitBreaker should wait before transitioning from open state to half-open state
+        permitted-number-of-calls-in-half-open-state: 3 #In the half open state, the CircuitBreaker will try to request to destination service if all requests (total permitted number of calls) still fails. the CircuitBreaker will go back to the open state
+        automatic-transition-from-open-to-half-open-enabled: true
+  timelimiter:
+    instances:
+      inventory:
+        timeout-duration: 20s #wait 20 sec. before terminating the request and return a response (but service is still running as an async task)
+  retry:
+    instances:
+      inventory:
+        max-attempts: 2 #max retry 3 times (including the first fail request)
+        wait-duration: 5s #wait 5 sec before retrying
