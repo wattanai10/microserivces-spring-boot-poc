@@ -31,6 +31,11 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=${server.servlet.context-path}/api/order/**
+  zipkin:
+    base-url: http://localhost:9411
+  sleuth:
+    sampler:
+      probability: 1.0
 eureka:
   client:
     serviceUrl:

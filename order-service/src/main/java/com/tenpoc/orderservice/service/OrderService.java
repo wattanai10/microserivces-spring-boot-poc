@@ -1,8 +1,8 @@
 package com.tenpoc.orderservice.service;
 
-import com.tenpoc.orderservice.config.WebClientConfig;
+import brave.Span;
+import brave.Tracer;
 import com.tenpoc.orderservice.dto.InventoryDTO;
-import com.tenpoc.orderservice.dto.InventoryResponseDTO;
 import com.tenpoc.orderservice.dto.OrderLineItemsDTO;
 import com.tenpoc.orderservice.dto.OrderRequestDTO;
 import com.tenpoc.orderservice.model.Order;
@@ -25,6 +25,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final Tracer tracer;
 
     public String placeOrder(OrderRequestDTO orderRequestDTO) {
         Order order = new Order();
@@ -40,27 +41,37 @@ public class OrderService {
                 .map(OrderLineItems::getSkuCode)
                 .collect(Collectors.toList());
 
-        InventoryDTO[] result = webClientBuilder.build().get()
-                .uri("http://inventory-service/pocmicroservice/api/inventory/status", /*call inventory service by application name that was registered to discover server*/
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodeList).build())
-                .retrieve()
-                .bodyToMono(InventoryDTO[].class)//Define data type of return value
-                .block(); //synchronous request
+        log.info("Calling inventory-service...");
+        Span inventoryServiceLookup = tracer.nextSpan().name("InventoryServiceLookup");
 
-        if (result == null || result.length <= 0) {
-            throw new IllegalArgumentException("Product is not in found.");
-        }
+        //specify span's name before calling other services
+        try (Tracer.SpanInScope ignored = tracer.withSpanInScope(inventoryServiceLookup.start())) {
+            InventoryDTO[] result = webClientBuilder.build().get()
+                    .uri("http://inventory-service/pocmicroservice/api/inventory/status", /*call inventory service by application name that was registered to discover server*/
+                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodeList).build())
+                    .retrieve()
+                    .bodyToMono(InventoryDTO[].class)//Define data type of return value
+                    .block(); //synchronous request
 
-        boolean allProductsInStock = Arrays
-                .stream(result)
-                .allMatch(InventoryDTO::isInStock); //return true if all isInStock values of product are True
+            if (result == null || result.length <= 0) {
+                throw new IllegalArgumentException("Product is not in found.");
+            }
 
-        if (allProductsInStock) {
-            log.info("Begin save order");
-            orderRepository.save(order);
-            return "Place order successfully";
-        } else {
-            throw new IllegalArgumentException("Product is not in stock");
+            boolean allProductsInStock = Arrays
+                    .stream(result)
+                    .allMatch(InventoryDTO::isInStock); //return true if all isInStock values of product are True
+
+            if (allProductsInStock) {
+                log.info("Begin save order");
+                orderRepository.save(order);
+                return "Place order successfully";
+            } else {
+                throw new IllegalArgumentException("Product is not in stock");
+            }
+
+        } finally {
+            inventoryServiceLookup.finish();
+
         }
     }
 
